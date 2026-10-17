@@ -4,7 +4,7 @@ for clinical drug-information questions.
 Research use only. Not for clinical use. Not a medical device.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 DISCLAIMER = (
     "Research prototype for informational use by healthcare professionals. "

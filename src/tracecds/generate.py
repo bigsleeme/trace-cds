@@ -17,11 +17,12 @@ from .chunking import split_sentences
 from .schema import Passage
 from .text import content_tokens
 
-SYSTEM_PROMPT = """You support licensed healthcare professionals by summarizing FDA drug labeling.
+SYSTEM_PROMPT = """You support healthcare professionals by summarizing the numbered sources provided
+(FDA drug labeling or web pages).
 Rules:
 - Use ONLY the numbered sources provided. If they do not answer the question, reply exactly: INSUFFICIENT
 - Write 2 to 5 short statements. End every statement with its source tag, e.g. [S2].
-- Report what the label says ("The label states..."). Do not give orders, choose a treatment,
+- Report what each source says ("According to fda.gov...", "The label states..."). Do not give orders, choose a treatment,
   set a dose for a specific patient, or make a diagnosis.
 - Copy numbers (doses, frequencies, thresholds) exactly as they appear in the sources.
 Return one statement per line, nothing else."""
@@ -29,8 +30,16 @@ Return one statement per line, nothing else."""
 
 def format_sources(passages: list[Passage]) -> str:
     return "\n\n".join(
-        f"[S{i}] {p.source_title} - {p.section} (label effective {p.effective_date or 'n/a'}):\n{p.text}"
+        f"[S{i}] {p.source_title} - {p.section} ({p.publisher or 'source'}; trust: {p.trust}):\n{p.text}"
         for i, p in enumerate(passages, 1))
+
+
+def attribution(p: Passage) -> str:
+    """Who is speaking: 'the metformin label (Contraindications)' or 'fda.gov (Page title)'."""
+    if p.drug:
+        return f"the {p.drug} label ({p.section})"
+    title = p.source_title.replace('"', "'").replace("(", "").replace(")", "")[:90]
+    return f"{p.publisher} ({title})" if title and title != p.publisher else p.publisher
 
 
 class ExtractiveGenerator:
@@ -61,8 +70,7 @@ class ExtractiveGenerator:
             for score, sent in scored[: self.per_passage]:
                 if score > 0.05:
                     quote = sent.replace('"', "'")
-                    candidates.append((score, i, f'According to the {p.drug} label ({p.section}): '
-                                                 f'"{quote}" [S{i}]'))
+                    candidates.append((score, i, f'According to {attribution(p)}: "{quote}" [S{i}]'))
         candidates.sort(key=lambda c: c[0], reverse=True)
         return [c[2] for c in candidates[: self.max_statements]]
 
@@ -83,8 +91,8 @@ class ExtractiveGenerator:
         chosen = scored[:2] if len(body) > 2 else body
         quoted = "; ".join(", ".join(f"{h}: {c}" for h, c in zip(header, r) if c) for r in chosen)
         quoted = quoted.replace('"', "'")
-        where = p.section + (f", {caption}" if caption else "")
-        return (table_hit / (len(q) or 1) + 0.25, i, f'According to the {p.drug} label ({where}): "{quoted}" [S{i}]')
+        where = attribution(p)[:-1] + (f", {caption})" if caption else ")") if p.drug else attribution(p)
+        return (table_hit / (len(q) or 1) + 0.25, i, f'According to {where}: "{quoted}" [S{i}]')
 
 
 class LLMGenerator:

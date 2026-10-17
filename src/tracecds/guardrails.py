@@ -157,17 +157,27 @@ def check_statement(statement: str, sources: dict[int, Passage],
     if not valid:
         return StatementCheck(False, "no valid citation (Criterion 4)", cited)
     source_text = " ".join(sources[n].text for n in valid)
-    body = CITATION_RE.sub("", statement)
+    body = CITATION_RE.sub("", statement).strip()
+    # Drop the attribution prefix ('According to X (Title): "...') so source names and page
+    # titles are not checked as claims.
+    if is_attributed(body) and ': "' in body:
+        body = body.split(': "', 1)[1]
+        body = '"' + body
+    quotes = [q.strip('"“” ') for q in _QUOTED_RE.findall(body)]
 
     src_nums = set(_NUM_RE.findall(source_text))
     missing = [n for n in _NUM_RE.findall(body) if n not in src_nums]
     if missing:
         return StatementCheck(False, f"numbers not found in cited source: {', '.join(missing)}", valid)
 
-    src_tokens = set(content_tokens(source_text))
-    stmt_tokens = [t for t in content_tokens(_ATTRIBUTION_RE.sub("", body.strip()))
-                   if not t.isdigit() and t != "label"]
-    support = (sum(t in src_tokens for t in stmt_tokens) / len(stmt_tokens)) if stmt_tokens else 0.0
+    norm = lambda t: " ".join(t.replace('"', "'").replace("“", "'").replace("”", "'").split()).lower()  # noqa: E731
+    if quotes and all(norm(q) in norm(source_text) for q in quotes):
+        support = 1.0  # verbatim quotation
+    else:
+        src_tokens = set(content_tokens(source_text))
+        check_text = " ".join(quotes) if quotes else _ATTRIBUTION_RE.sub("", body)
+        stmt_tokens = [t for t in content_tokens(check_text) if not t.isdigit() and t != "label"]
+        support = (sum(t in src_tokens for t in stmt_tokens) / len(stmt_tokens)) if stmt_tokens else 0.0
     if support < min_support:
         return StatementCheck(False, f"insufficient support in cited source ({support:.0%})", valid, support)
 

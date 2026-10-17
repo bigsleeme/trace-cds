@@ -78,14 +78,15 @@ def label_to_passages(label: dict[str, Any], drug: str | None = None) -> list[Pa
                 passages.append(Passage(
                     passage_id=f"{name}:{key}:{i}:{j}", text=chunk, drug=name,
                     section=section, source_title=title, source_url=url,
-                    effective_date=date))
+                    effective_date=date, publisher="FDA label (DailyMed)"))
         for i, html in enumerate(label.get(f"{key}_table", []) or []):
             md = html_table_to_markdown(html)
             if md:
                 passages.append(Passage(
                     passage_id=f"{name}:{key}_table:{i}", text=md, drug=name,
                     section=f"{section} (table)", source_title=title,
-                    source_url=url, effective_date=date, is_table=True))
+                    source_url=url, effective_date=date, is_table=True,
+                    publisher="FDA label (DailyMed)"))
     return passages
 
 

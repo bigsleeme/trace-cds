@@ -18,6 +18,8 @@ class Passage:
     source_url: str
     effective_date: str = ""
     is_table: bool = False
+    trust: str = "approved"  # "approved" | "reputable" | "unverified" (see trust.py)
+    publisher: str = ""      # e.g. "fda.gov", or "FDA label" for label passages
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -57,6 +59,7 @@ class Answer:
     limitations: list[str] = field(default_factory=list)
     criteria: list[CriterionCheck] = field(default_factory=list)
     removed_statements: list[dict[str, str]] = field(default_factory=list)
+    warnings: list[str] = field(default_factory=list)
     message: str = ""
 
     def to_dict(self) -> dict[str, Any]:
@@ -70,6 +73,7 @@ class Answer:
                 for c in self.citations
             ],
             "limitations": self.limitations,
+            "warnings": self.warnings,
             "criteria": [asdict(c) for c in self.criteria],
             "removed_statements": self.removed_statements,
         }

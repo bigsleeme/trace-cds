@@ -1,0 +1,27 @@
+# SearXNG configuration for TraceCDS (internal use only; not exposed to the internet).
+use_default_settings: true
+
+general:
+  instance_name: "TraceCDS search"
+
+server:
+  # Replaced at startup from the SEARXNG_SECRET environment variable.
+  secret_key: "ultrasecretkey"
+  limiter: false
+  image_proxy: false
+
+search:
+  safe_search: 1
+  formats:
+    - html
+    - json
+
+engines:
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+  - name: duckduckgo
+    disabled: false
+  - name: pubmed
+    disabled: false

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "tracecds"
-version = "0.1.0"
+version = "0.2.0"
 description = "Traceable, non-device-by-design retrieval-augmented generation for clinical drug-information questions"
 readme = "README.md"
 license = { text = "Apache-2.0" }

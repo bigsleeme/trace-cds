@@ -4,7 +4,7 @@ title: "TraceCDS: Traceable, non-device-by-design retrieval-augmented generation
 authors:
   - family-names: Balogun
     given-names: Emmanuel Joshua
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-10-17
 license: Apache-2.0
 repository-code: "https://github.com/bigsleeme/trace-cds"

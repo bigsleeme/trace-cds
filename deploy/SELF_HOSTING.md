@@ -7,12 +7,13 @@ Everything in this stack is open source:
 | TraceCDS | Retrieval, guardrails, web app | Apache-2.0 |
 | Gradio | Web interface | Apache-2.0 |
 | Ollama | Runs the language model locally | MIT |
+| SearXNG | Self-hosted web search (queries Google, Bing, DuckDuckGo, PubMed) | AGPL-3.0 |
 | Qwen2.5-7B-Instruct (default model) | Summarizes label passages | Apache-2.0 |
 | OLMo 2 7B (alternative) | Fully open model: weights, data, code | Apache-2.0 |
 | Caddy | HTTPS and reverse proxy | Apache-2.0 |
 | openFDA / DailyMed | Drug labeling data | U.S. government data |
 
-No question is sent to any outside AI service. The model runs on your server.
+No question is sent to any outside AI service. The model runs on your server. Web searches go out from your server through SearXNG.
 
 ## 1. Server
 
@@ -31,7 +32,8 @@ curl -fsSL https://get.docker.com | sh
 git clone https://github.com/bigsleeme/trace-cds.git
 cd trace-cds
 cp .env.example .env
-nano .env            # DOMAIN=tracecds.com, www.tracecds.com (optionally TRACECDS_MODEL)
+openssl rand -hex 32 # copy the output into SEARXNG_SECRET in .env
+nano .env            # DOMAIN=tracecds.com, www.tracecds.com and SEARXNG_SECRET=...
 
 docker compose up -d --build
 docker compose logs -f model-pull   # first run downloads the model (~4.7 GB)
@@ -41,7 +43,7 @@ Open `https://your-domain`. Caddy obtains the HTTPS certificate on first visit. 
 
 ## 4. Firewall
 
-Allow only SSH (22), HTTP (80), and HTTPS (443). Ollama is not exposed to the internet; only the app container can reach it.
+Allow only SSH (22), HTTP (80), and HTTPS (443). Ollama and SearXNG are not exposed to the internet; only the app container can reach them.
 
 ```bash
 sudo ufw allow 22 && sudo ufw allow 80 && sudo ufw allow 443 && sudo ufw enable
@@ -65,3 +67,7 @@ docker compose exec app rm /data/corpus.jsonl && docker compose restart app
 - Questions are processed on your server and are not stored by TraceCDS. Gradio analytics are disabled, and Caddy access logs are discarded.
 - The interface asks users not to enter patient identifiers, and questions containing common identifiers (record numbers, dates of birth, SSNs, emails, phone numbers) are declined before processing.
 - Keep the "Research prototype. Not for clinical use." banner. TraceCDS is not a medical device.
+
+## Web search notes
+
+Search engines sometimes rate-limit servers. If web answers stop appearing, check `docker compose logs searxng`. SearXNG combines several engines, so it keeps working if one engine blocks it. You can change engines in `deploy/searxng/settings.yml`.

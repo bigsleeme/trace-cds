@@ -2,9 +2,10 @@ __pycache__/
 *.pyc
 *.egg-info/
 .venv/
+venv/
+env/
 .env
 data/
 .env
 eval/results/
 .pytest_cache/
-venv/

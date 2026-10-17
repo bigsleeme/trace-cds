@@ -1,6 +1,6 @@
 # Self-hosted TraceCDS: web app + open-source LLM (Ollama) + automatic HTTPS (Caddy).
-# All components are open source: Gradio (Apache-2.0), Ollama (MIT), Caddy (Apache-2.0),
-# default model Qwen2.5-7B-Instruct (Apache-2.0).
+# All components are open source: Gradio (Apache-2.0), Ollama (MIT), SearXNG (AGPL-3.0),
+# Caddy (Apache-2.0), default model Qwen2.5-7B-Instruct (Apache-2.0).
 services:
   ollama:
     image: ollama/ollama:latest
@@ -17,11 +17,22 @@ services:
     entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${TRACECDS_MODEL:-qwen2.5:7b-instruct}"]
     restart: "no"
 
+  searxng:
+    image: searxng/searxng:latest
+    restart: unless-stopped
+    environment:
+      - SEARXNG_SECRET=${SEARXNG_SECRET}
+      - SEARXNG_BASE_URL=http://searxng:8080/
+    volumes:
+      - ./deploy/searxng:/etc/searxng
+    # Not published to the internet; only the app can reach it.
+
   app:
     build: .
     restart: unless-stopped
-    depends_on: [ollama]
+    depends_on: [ollama, searxng]
     environment:
+      - SEARXNG_URL=http://searxng:8080
       - TRACECDS_LLM_URL=http://ollama:11434/v1
       - TRACECDS_MODEL=${TRACECDS_MODEL:-qwen2.5:7b-instruct}
       - OPENFDA_API_KEY=${OPENFDA_API_KEY:-}

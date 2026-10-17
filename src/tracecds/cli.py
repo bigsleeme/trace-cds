@@ -11,6 +11,7 @@ from . import DISCLAIMER, __version__
 from .generate import ExtractiveGenerator, LLMGenerator
 from .pipeline import TraceCDS, render
 from .sources import build_corpus, load_corpus, save_corpus
+from .web import WebSearcher
 
 DEFAULT_CORPUS = "data/corpus.jsonl"
 DEFAULT_DRUGS = ["metformin", "lisinopril", "atorvastatin", "warfarin", "amoxicillin",
@@ -21,7 +22,8 @@ def _system(args) -> TraceCDS:
     if not os.path.exists(args.corpus):
         sys.exit(f"No corpus at {args.corpus}. Run: tracecds ingest")
     gen = LLMGenerator(base_url=args.llm_url, model=args.model) if args.llm else ExtractiveGenerator()
-    return TraceCDS(load_corpus(args.corpus), generator=gen, k=args.k)
+    web = WebSearcher(searxng_url=getattr(args, "searxng_url", None))
+    return TraceCDS(load_corpus(args.corpus), generator=gen, k=args.k, web=web)
 
 
 def cmd_ingest(args) -> None:
@@ -33,7 +35,8 @@ def cmd_ingest(args) -> None:
 
 
 def cmd_ask(args) -> None:
-    ans = _system(args).ask(args.question, has_attachment=args.attachment)
+    mode = "web" if args.web else "auto" if args.auto else "labels"
+    ans = _system(args).ask(args.question, has_attachment=args.attachment, mode=mode)
     print(json.dumps(ans.to_dict(), indent=2) if args.json else render(ans))
     if not args.json:
         print(f"\n{DISCLAIMER}")
@@ -75,6 +78,9 @@ def main(argv: list[str] | None = None) -> None:
     sub.choices["ask"].add_argument("question")
     sub.choices["ask"].add_argument("--attachment", action="store_true", help="simulate an attached image/signal")
     sub.choices["ask"].add_argument("--json", action="store_true")
+    sub.choices["ask"].add_argument("--web", action="store_true", help="answer from a live web search")
+    sub.choices["ask"].add_argument("--auto", action="store_true", help="labels first, then web if not covered")
+    sub.choices["ask"].add_argument("--searxng-url", help="SearXNG address (default: $SEARXNG_URL or localhost:8888)")
     sub.choices["eval"].add_argument("--suite", default="eval/compliance_suite.jsonl")
     sub.choices["eval"].add_argument("--baseline", action="store_true", help="also test the plain LLM without TraceCDS")
     sub.choices["eval"].add_argument("--out-dir", default="eval/results")

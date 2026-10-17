@@ -1,6 +1,6 @@
 # TraceCDS
 
-**Traceable, non-device-by-design retrieval-augmented generation for clinical drug-information questions.**
+**Traceable, source-checked answers to healthcare questions, built to stay within FDA's non-device clinical decision support criteria.**
 
 Live demo: **https://tracecds.com**
 
@@ -8,13 +8,14 @@ Live demo: **https://tracecds.com**
 
 Large language models give fluent answers to clinical questions, but clinicians can't easily tell which parts are grounded in an authoritative source and which are invented. FDA's criteria for non-device clinical decision support (CDS) require that software *support* a healthcare professional's judgment rather than direct it, and let the professional *independently review the basis* for what it says. Research has shown that instructing an LLM to follow these criteria in a prompt is not enough.
 
-TraceCDS answers drug-information questions only from FDA drug labeling and enforces the non-device criteria **in code, on every statement**:
+TraceCDS answers from FDA drug labeling first and, when the labels don't cover a question, from a live web search. **Every source is trust-checked**: approved healthcare sources (FDA, CDC, NIH and PubMed, WHO, major peer-reviewed journals, national medical societies) are marked as approved; recognized medical institutions are marked as such; and anything else is used only with a clear warning that it is not an approved healthcare source. Non-device criteria are enforced **in code, on every statement**:
 
 - **Every statement cites its source** (label section, DailyMed link, and label effective date).
 - **Every number must appear in the cited source.** A dose that isn't in the label is removed.
 - **Directive statements are removed.** "Give 500 mg" fails; "The label states the starting dose is 500 mg [S1]" passes.
 - **Time-critical, image-based, and identifiable-patient questions are declined** before any retrieval.
-- **Questions outside the indexed labels get an abstention**, not a guess.
+- **Sources are ranked by trust before use**, and any statement from a non-approved source is flagged in the answer.
+- **When nothing can be verified, it abstains** instead of guessing.
 - **Label tables are preserved.** Dosing tables are converted from HTML to Markdown and quoted row by row with their column headers.
 
 Every answer includes an audit trail: which statements were removed and why, and how each of FDA's four criteria was handled. See [docs/fda_cds_mapping.md](docs/fda_cds_mapping.md).
@@ -59,17 +60,21 @@ tracecds ingest
 # 2. Ask a question (extractive mode: no API key needed)
 tracecds ask "What are the contraindications for metformin?"
 
-# 3. Summarize with a local open-source LLM instead (same guardrails apply)
+# 3. Questions beyond the labels: live web search through self-hosted SearXNG
+docker run -d -p 8888:8080 -v "$(pwd)/deploy/searxng:/etc/searxng" searxng/searxng
+tracecds ask "FDA approval of a heart valve designed to grow with children" --auto
+
+# 4. Summarize with a local open-source LLM instead (same guardrails apply)
 #    Install Ollama (https://ollama.com), then:
 ollama pull qwen2.5:7b-instruct
 tracecds ask "What does the isotretinoin label say about pregnancy?" --llm
 
-# 4. Run the compliance suite (add --baseline to compare the plain LLM)
+# 5. Run the compliance suite (add --baseline to compare the plain LLM)
 tracecds eval
 tracecds eval --llm --baseline
 ```
 
-TraceCDS uses only open-source software and models. The LLM generator talks to any OpenAI-compatible server you run yourself (Ollama by default, or vLLM or the llama.cpp server). Recommended models, all Apache-2.0: `qwen2.5:7b-instruct` (default), `olmo2:7b` (fully open weights, data, and code), and `mistral:7b`. Set `TRACECDS_LLM_URL` and `TRACECDS_MODEL` to change them. No question is sent to an outside AI service.
+TraceCDS uses only open-source software and models. Web search runs through [SearXNG](https://github.com/searxng/searxng) (AGPL-3.0), a self-hosted metasearch engine that queries Google, Bing, DuckDuckGo, and PubMed from your own server. The LLM generator talks to any OpenAI-compatible server you run yourself (Ollama by default, or vLLM or the llama.cpp server). Recommended models, all Apache-2.0: `qwen2.5:7b-instruct` (default), `olmo2:7b` (fully open weights, data, and code), and `mistral:7b`. Set `TRACECDS_LLM_URL` and `TRACECDS_MODEL` to change them. No question is sent to an outside AI service.
 
 An optional free openFDA API key (`OPENFDA_API_KEY`) raises rate limits. For semantic retrieval, install `pip install -e ".[dense]"` and use `HybridRetriever`.
 
@@ -100,6 +105,8 @@ question ──► input screen ──► retrieve (BM25 over label passages) �
 | `tables.py` | Converts label HTML tables to Markdown |
 | `chunking.py` | Sentence-aware chunking that never splits a sentence or a decimal |
 | `retrieval.py` | Dependency-free BM25; optional hybrid dense retrieval |
+| `web.py` | Web search through self-hosted SearXNG; page text extraction |
+| `trust.py` | Classifies each source as approved, recognized institution, or not approved |
 | `generate.py` | Extractive generator (no model) and LLM generator (self-hosted open-source model) |
 | `guardrails.py` | Input screening and per-statement verification |
 | `pipeline.py` | Orchestration, limitations, and the criteria report |
