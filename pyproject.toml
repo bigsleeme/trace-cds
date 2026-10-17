@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tracecds"
+version = "0.1.0"
+description = "Traceable, non-device-by-design retrieval-augmented generation for clinical drug-information questions"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Emmanuel Joshua Balogun" }]
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: Apache Software License",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+
+[project.optional-dependencies]
+dense = ["sentence-transformers>=2.2", "numpy>=1.24"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+tracecds = "tracecds.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

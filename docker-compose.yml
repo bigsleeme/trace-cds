@@ -1,0 +1,49 @@
+# Self-hosted TraceCDS: web app + open-source LLM (Ollama) + automatic HTTPS (Caddy).
+# All components are open source: Gradio (Apache-2.0), Ollama (MIT), Caddy (Apache-2.0),
+# default model Qwen2.5-7B-Instruct (Apache-2.0).
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+    # Not published to the internet; only the app can reach it.
+
+  model-pull:
+    image: ollama/ollama:latest
+    depends_on: [ollama]
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c", "sleep 5 && ollama pull ${TRACECDS_MODEL:-qwen2.5:7b-instruct}"]
+    restart: "no"
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on: [ollama]
+    environment:
+      - TRACECDS_LLM_URL=http://ollama:11434/v1
+      - TRACECDS_MODEL=${TRACECDS_MODEL:-qwen2.5:7b-instruct}
+      - OPENFDA_API_KEY=${OPENFDA_API_KEY:-}
+    volumes:
+      - data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [app]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  ollama:
+  data:
+  caddy_data:
+  caddy_config:
