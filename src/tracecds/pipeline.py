@@ -54,6 +54,61 @@ class TraceCDS:
             return web_ans
         return ans
 
+    def ask_interactions(self, drugs: list[str], has_attachment: bool = False) -> Answer:
+        """Report what the FDA labels say about interactions among the given drugs.
+
+        Pulls each drug's interaction-relevant sections (Drug Interactions,
+        Contraindications, Boxed Warning, Warnings) and surfaces, first, passages
+        in one drug's label that name another of the requested drugs. Still
+        verified and guardrailed like any other answer -- it reports what the
+        labels say, it does not decide whether to co-prescribe.
+        """
+        names = sorted({d.strip().lower() for d in drugs if d and d.strip()})
+        question = "What do the FDA labels say about interactions between " + ", ".join(names) + "?"
+        decision = check_input(question, has_attachment=has_attachment)
+        if decision.status != "ok":
+            ans = Answer(question, "blocked", message=" ".join(decision.reasons))
+            ans.criteria = self._criteria(ans, image=decision.image_or_signal,
+                                          time_critical=decision.status == "time_critical")
+            return ans
+        if len(names) < 2:
+            return self._abstain(question, "Name at least two drugs to check for interactions.")
+        indexed = set(self.retriever.drugs)
+        missing = [d for d in names if d not in indexed]
+        if missing:
+            return self._abstain(question, "Not covered by the indexed FDA labels: "
+                                           f"{', '.join(missing)}.")
+        hits = self._interaction_hits(names)
+        if not hits:
+            return self._abstain(question, "The indexed labels for these drugs do not include "
+                                           "interaction, contraindication, or warning sections.")
+        ans = self._answer(question, hits, decision)
+        if ans.status == "answered":
+            ans.limitations.append("Interactions are reported from each drug's own FDA label; a label "
+                                   "may not list every clinically relevant interaction.")
+        return ans
+
+    @staticmethod
+    def _is_interaction_section(section: str) -> bool:
+        s = section.lower()
+        return any(key in s for key in ("interaction", "contraindication", "boxed warning", "warning"))
+
+    def _interaction_hits(self, names: list[str]):
+        """Interaction-relevant passages for the named drugs, cross-references first."""
+        scored = []
+        for p in self.retriever.passages:
+            if p.drug not in names or not self._is_interaction_section(p.section):
+                continue
+            others = [d for d in names if d != p.drug]
+            text = p.text.lower()
+            mentions_other = any(o in text for o in others)
+            section_rank = 2.0 if "interaction" in p.section.lower() else 1.0
+            score = section_rank + (3.0 if mentions_other else 0.0)
+            scored.append((score, p))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        top = scored[: max(self.k, 2 * len(names))]
+        return [(p, s) for s, p in top]
+
     # ------------------------------------------------------------------ sources
 
     def _ask_labels(self, question: str, decision) -> Answer:
