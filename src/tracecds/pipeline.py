@@ -201,6 +201,8 @@ class TraceCDS:
     def _limitations(ans: Answer, patient_specific: bool, web: bool) -> list[str]:
         notes = []
         if web:
+            notes.append("This answer is not grounded in FDA drug labeling; it comes from a web search and "
+                         "falls outside TraceCDS's FDA-label verification guarantee.")
             notes.append(f"Web sources were retrieved on {date.today().isoformat()}; pages can change or be removed.")
         if any(c.passage.drug for c in ans.citations):
             notes.append("Label information may not reflect newer evidence or guidelines.")
@@ -216,6 +218,7 @@ class TraceCDS:
     def _criteria(ans: Answer, image: bool = False, time_critical: bool = False) -> list[CriterionCheck]:
         answered = ans.status == "answered"
         flagged = sorted({c.passage.publisher for c in ans.citations if c.passage.trust != "approved"})
+        label_grounded = answered and bool(ans.citations) and all(c.passage.drug for c in ans.citations)
         reviewable = answered and all(c.passage.source_url for c in ans.citations)
         if time_critical:
             detail4 = "Time-critical question declined; independent review is not feasible in an emergency."
@@ -225,10 +228,16 @@ class TraceCDS:
             detail4 = "No recommendation given."
         else:
             detail4 = "Some citations lack a link."
-        detail2 = ("No sources used." if not answered else
-                   "All sources are approved healthcare sources." if not flagged else
-                   f"Includes sources that are not approved healthcare sources ({', '.join(flagged)}); "
-                   "flagged to the user.")
+        if not answered:
+            detail2 = "No sources used."
+        elif flagged:
+            detail2 = (f"Includes sources that are not approved healthcare sources ({', '.join(flagged)}); "
+                       "flagged to the user.")
+        elif label_grounded:
+            detail2 = "All sources are FDA drug labels."
+        else:
+            detail2 = ("Answered from approved healthcare sources beyond FDA drug labeling (web search); "
+                       "this is outside the FDA-label grounding and should be reviewed on that basis.")
         return [
             CriterionCheck(1, CRITERIA_NAMES[1], True,
                            "Image or signal input declined." if image else "Text-only input."),
