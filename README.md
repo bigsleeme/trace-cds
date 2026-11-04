@@ -22,27 +22,50 @@ Every answer includes an audit trail: which statements were removed and why, and
 
 ## Example
 
-```text
-Q: How is exampledrug dosed for kidney function and eGFR?
+Real output from `tracecds ask "What are the contraindications for metformin?"`
+(extractive mode — every statement quoted verbatim from the live FDA label, no model):
 
-- According to the exampledrug label (Dosage and Administration (table), Table 1. Dosing by
-  kidney function): "eGFR (mL/min): 45 or more, Recommendation: No adjustment; eGFR (mL/min):
-  30 to 44, Recommendation: Do not initiate" [S1]
-- According to the exampledrug label (Contraindications): "Exampledrug is contraindicated in
-  patients with severe renal impairment (eGFR below 30 mL/min)." [S2]
+```text
+Q: What are the contraindications for metformin?
+
+- According to the metformin label (Contraindications): "Metformin hydrochloride
+  extended-release tablets are contraindicated in patients with: Severe renal impairment
+  (eGFR below 30 mL/min/1.73 m2) [see Warnings and Precautions (5.1)]. Hypersensitivity to
+  metformin. Acute or chronic metabolic acidosis, including diabetic ketoacidosis, with or
+  without coma." [S1]
+- According to the metformin label (Use in Specific Populations): "Metformin hydrochloride
+  extended-release tablets are contraindicated in severe renal impairment, patients with an
+  estimated glomerular filtration rate (eGFR) below 30 mL/min/1.73 m2 ..." [S2]
 
 Sources:
-  [S1] FDA label: exampledrug | Dosage and Administration (table) | effective 2025-01-15
-       https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=...
+  [S1] APPROVED HEALTHCARE SOURCE: FDA label: metformin | Contraindications | effective 2026-09-09
+       https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=05999192-ebc6-4198-bd1e-f46abbfb4f8a
+  [S2] APPROVED HEALTHCARE SOURCE: FDA label: metformin | Use in Specific Populations | effective 2026-09-09
+       https://dailymed.nlm.nih.gov/dailymed/drugInfo.cfm?setid=05999192-ebc6-4198-bd1e-f46abbfb4f8a
 
-Non-device CDS checks:
+Checks:
   PASS C1 No analysis of medical images or signals: Text-only input.
-  PASS C2 Uses well-understood medical information (FDA labeling): All sources are FDA labels.
-  PASS C3 Supports, does not direct, clinical judgment: Statements report labeling; ...
-  PASS C4 Basis is available for independent review: Each statement cites a source with ...
+  PASS C2 Uses well-understood, authoritative medical sources: All sources are approved healthcare sources.
+  PASS C3 Supports, does not direct, clinical judgment: Statements report what sources say; directive statements removed.
+  PASS C4 Basis is available for independent review: Each statement cites a source with a link the clinician can open.
 ```
 
-*(Output from the synthetic test label in `tests/conftest.py`.)*
+## Measured compliance results
+
+Running the 31-question suite against the plain LLM and against TraceCDS (same model,
+same questions) on **2026-11-03**:
+
+| Metric | Plain LLM (FDA criteria in prompt) | TraceCDS |
+| --- | --- | --- |
+| Directive statements in final answers | 13 of 221 sentences (6%) | **0** |
+| Citation coverage | 0% | **100%** |
+| Behaves as expected | — | 94% (29/31) |
+
+The same model told in its prompt to follow FDA's criteria still produced directive
+clinical statements and cited nothing; routed through TraceCDS, directive statements are
+removed before the answer is returned and every statement cites an authoritative source.
+Full report, per-category breakdown, and the two questions TraceCDS did **not** yet handle
+as expected: [docs/compliance_results.md](docs/compliance_results.md).
 
 ## Quick start
 
