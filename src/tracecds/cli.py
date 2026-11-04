@@ -10,12 +10,58 @@ import sys
 from . import DISCLAIMER, __version__
 from .generate import ExtractiveGenerator, LLMGenerator
 from .pipeline import TraceCDS, render
+from .retrieval import build_retriever
 from .sources import build_corpus, load_corpus, save_corpus
 from .web import WebSearcher
 
 DEFAULT_CORPUS = "data/corpus.jsonl"
-DEFAULT_DRUGS = ["metformin", "lisinopril", "atorvastatin", "warfarin", "amoxicillin",
-                 "ibuprofen", "sertraline", "isotretinoin", "methotrexate", "doxycycline"]
+# A broad set of commonly prescribed generic drugs across major classes. Names
+# that openFDA doesn't match are skipped at ingest time (see build_corpus).
+DEFAULT_DRUGS = [
+    # cardiovascular
+    "lisinopril", "enalapril", "ramipril", "losartan", "valsartan", "olmesartan",
+    "amlodipine", "nifedipine", "diltiazem", "verapamil", "metoprolol", "atenolol",
+    "carvedilol", "propranolol", "bisoprolol", "hydrochlorothiazide", "chlorthalidone",
+    "furosemide", "spironolactone", "torsemide", "atorvastatin", "simvastatin",
+    "rosuvastatin", "pravastatin", "ezetimibe", "fenofibrate", "warfarin", "apixaban",
+    "rivaroxaban", "dabigatran", "clopidogrel", "ticagrelor", "aspirin", "digoxin",
+    "isosorbide mononitrate", "nitroglycerin", "hydralazine", "amiodarone",
+    # diabetes & endocrine
+    "metformin", "glipizide", "glimepiride", "glyburide", "sitagliptin", "linagliptin",
+    "empagliflozin", "dapagliflozin", "pioglitazone", "semaglutide", "dulaglutide",
+    "liraglutide", "levothyroxine", "methimazole", "insulin glargine", "insulin lispro",
+    # gastrointestinal
+    "omeprazole", "pantoprazole", "esomeprazole", "lansoprazole", "famotidine",
+    "ondansetron", "metoclopramide", "sucralfate", "dicyclomine", "loperamide",
+    "polyethylene glycol", "docusate",
+    # pain, inflammation, neuro
+    "ibuprofen", "naproxen", "acetaminophen", "celecoxib", "meloxicam", "diclofenac",
+    "ketorolac", "indomethacin", "tramadol", "gabapentin", "pregabalin", "cyclobenzaprine",
+    "baclofen", "tizanidine", "sumatriptan", "topiramate", "lamotrigine", "levetiracetam",
+    "carbamazepine", "phenytoin", "valproic acid",
+    # antibiotics, antifungals, antivirals
+    "amoxicillin", "ampicillin", "penicillin", "cephalexin", "cefuroxime", "cefdinir",
+    "azithromycin", "clarithromycin", "erythromycin", "ciprofloxacin", "levofloxacin",
+    "moxifloxacin", "doxycycline", "minocycline", "clindamycin", "metronidazole",
+    "nitrofurantoin", "trimethoprim", "sulfamethoxazole", "vancomycin", "linezolid",
+    "fluconazole", "nystatin", "terbinafine", "acyclovir", "valacyclovir", "oseltamivir",
+    # psychiatric & CNS
+    "sertraline", "escitalopram", "citalopram", "fluoxetine", "paroxetine", "duloxetine",
+    "venlafaxine", "bupropion", "mirtazapine", "trazodone", "amitriptyline", "nortriptyline",
+    "alprazolam", "lorazepam", "clonazepam", "diazepam", "temazepam", "zolpidem", "buspirone",
+    "quetiapine", "aripiprazole", "risperidone", "olanzapine", "haloperidol", "lithium",
+    "methylphenidate", "lisdexamfetamine", "atomoxetine", "donepezil", "memantine",
+    # respiratory & allergy
+    "albuterol", "levalbuterol", "ipratropium", "tiotropium", "montelukast", "fluticasone",
+    "budesonide", "mometasone", "prednisone", "prednisolone", "methylprednisolone",
+    "dexamethasone", "cetirizine", "loratadine", "fexofenadine", "diphenhydramine",
+    "hydroxyzine", "guaifenesin", "benzonatate",
+    # dermatology, GU, rheum, misc
+    "isotretinoin", "methotrexate", "hydroxychloroquine", "allopurinol", "colchicine",
+    "febuxostat", "finasteride", "tamsulosin", "oxybutynin", "sildenafil", "tadalafil",
+    "estradiol", "medroxyprogesterone", "testosterone", "alendronate", "ranitidine",
+    "enoxaparin", "heparin", "ferrous sulfate", "potassium chloride", "cyanocobalamin",
+]
 
 
 def _system(args) -> TraceCDS:
@@ -23,7 +69,8 @@ def _system(args) -> TraceCDS:
         sys.exit(f"No corpus at {args.corpus}. Run: tracecds ingest")
     gen = LLMGenerator(base_url=args.llm_url, model=args.model) if args.llm else ExtractiveGenerator()
     web = WebSearcher(searxng_url=getattr(args, "searxng_url", None))
-    return TraceCDS(load_corpus(args.corpus), generator=gen, k=args.k, web=web)
+    passages = load_corpus(args.corpus)
+    return TraceCDS(passages, generator=gen, retriever=build_retriever(passages), k=args.k, web=web)
 
 
 def cmd_ingest(args) -> None:
@@ -72,7 +119,7 @@ def main(argv: list[str] | None = None) -> None:
         p.add_argument("--corpus", default=DEFAULT_CORPUS)
         p.add_argument("--llm", action="store_true", help="summarize with a self-hosted open-source LLM")
         p.add_argument("--llm-url", help="OpenAI-compatible endpoint (default: Ollama at localhost:11434)")
-        p.add_argument("--model", help="model name, e.g. qwen2.5:7b-instruct or olmo2:7b")
+        p.add_argument("--model", help="model name, e.g. hf.co/mradermacher/BioMistral-Instructv0.2-7B-DARE-GGUF:Q4_K_M or olmo2:7b")
         p.add_argument("-k", type=int, default=5)
         p.set_defaults(func=fn)
     sub.choices["ask"].add_argument("question")

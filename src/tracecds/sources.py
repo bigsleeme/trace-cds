@@ -57,6 +57,52 @@ def fetch_label(generic_name: str, api_key: str | None = None, timeout: int = 30
     return results[0]
 
 
+def _single_ingredient_score(generic_name: str, term: str) -> int:
+    """Rank a candidate label for `term`: prefer the single-ingredient product
+    that is exactly this drug over combination products that merely contain it."""
+    g = generic_name.lower().strip()
+    combo = any(sep in g for sep in (" and ", ",", ";", "/"))
+    if g == term:
+        return 0            # exact single-ingredient match -- best
+    if not combo and term in g:
+        return 1            # single ingredient, name contains the term
+    if not combo:
+        return 2
+    return 3                # combination product -- last resort
+
+
+def search_label(term: str, api_key: str | None = None, timeout: int = 15) -> tuple[dict[str, Any], str] | None:
+    """Look a drug up live on openFDA by generic OR brand name.
+
+    Returns (label record, matched generic name) or None if nothing matched.
+    Prefers the single-ingredient product that IS the drug over combination
+    products that merely contain it. Used for on-demand lookup of drugs not
+    already in the local corpus.
+    """
+    term = term.strip().lower()
+    if not term:
+        return None
+    for field in ("openfda.generic_name", "openfda.brand_name"):
+        params = {"search": f'{field}:"{term}"', "limit": "10", "sort": "effective_time:desc"}
+        if api_key:
+            params["api_key"] = api_key
+        url = f"{OPENFDA_LABEL_URL}?{urllib.parse.urlencode(params)}"
+        req = urllib.request.Request(url, headers={"User-Agent": "TraceCDS/0.2 (research)"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+        except Exception:  # noqa: BLE001  (404/no-match/transient -> try next field)
+            continue
+        results = payload.get("results") or []
+        if not results:
+            continue
+        best = min(results, key=lambda r: _single_ingredient_score(
+            (r.get("openfda", {}).get("generic_name") or [term])[0], term))
+        name = (best.get("openfda", {}).get("generic_name") or [term])[0].lower()
+        return best, name
+    return None
+
+
 def _format_date(raw: str) -> str:
     return f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}" if re.fullmatch(r"\d{8}", raw or "") else raw or ""
 
@@ -90,12 +136,33 @@ def label_to_passages(label: dict[str, Any], drug: str | None = None) -> list[Pa
     return passages
 
 
-def build_corpus(drugs: Iterable[str], api_key: str | None = None) -> list[Passage]:
-    """Fetch labels for several drugs and return all passages."""
+def build_corpus(drugs: Iterable[str], api_key: str | None = None,
+                 delay: float = 0.0, verbose: bool = False) -> list[Passage]:
+    """Fetch labels for several drugs and return all passages.
+
+    Drugs with no openFDA label (or a transient fetch error) are skipped rather
+    than aborting the whole batch, so a large list ingests cleanly. `delay`
+    throttles requests to stay under openFDA's rate limit.
+    """
+    import sys
+    import time
+
     corpus: list[Passage] = []
-    for drug in drugs:
-        label = fetch_label(drug, api_key=api_key)
-        corpus.extend(label_to_passages(label, drug=drug.lower()))
+    skipped: list[str] = []
+    for i, drug in enumerate(drugs):
+        try:
+            label = fetch_label(drug, api_key=api_key)
+            corpus.extend(label_to_passages(label, drug=drug.lower()))
+            if verbose:
+                print(f"  [{i + 1}] {drug}: ok", file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001  (skip unmatched names / transient errors)
+            skipped.append(drug)
+            if verbose:
+                print(f"  [{i + 1}] {drug}: skipped ({exc})", file=sys.stderr)
+        if delay:
+            time.sleep(delay)
+    if skipped and verbose:
+        print(f"Skipped {len(skipped)}: {', '.join(skipped)}", file=sys.stderr)
     return corpus
 
 
