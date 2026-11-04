@@ -172,7 +172,7 @@ question ──► input screen ──► retrieve (BM25 over label passages) �
 | `retrieval.py` | Dependency-free BM25; optional hybrid dense retrieval (BAAI/bge-m3) with cross-encoder reranking (BAAI/bge-reranker-v2-m3) |
 | `web.py` | Web search through self-hosted SearXNG; page text extraction |
 | `trust.py` | Classifies each source as approved, recognized institution, or not approved |
-| `generate.py` | Extractive generator (no model) and LLM generator (self-hosted open-source model) |
+| `generate.py` | Extractive generator (no model) and LLM generator (open-weight model via a hosted or self-hosted OpenAI-compatible endpoint) |
 | `guardrails.py` | Input screening and per-statement verification |
 | `pipeline.py` | Orchestration, limitations, and the criteria report |
 | `evaluate.py` | Compliance suite runner and report |
