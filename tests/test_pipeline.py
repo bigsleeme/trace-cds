@@ -57,6 +57,15 @@ def test_patient_specific_note(passages):
     assert any("specific patient" in n for n in ans.limitations)
 
 
+def test_interactions_need_two_known_drugs(passages):
+    sys0 = TraceCDS(passages)
+    # fewer than two drugs -> abstain
+    assert sys0.ask_interactions(["exampledrug"]).status == "abstained"
+    # a drug not in the index -> abstain, naming the missing one
+    ans = sys0.ask_interactions(["exampledrug", "aspirin"])
+    assert ans.status == "abstained" and "aspirin" in ans.message
+
+
 def test_llm_generator_parses_lines_and_strips_reasoning(monkeypatch):
     from tracecds.generate import LLMGenerator
 

@@ -4,8 +4,13 @@ __pycache__/
 .venv/
 venv/
 env/
+# Secrets: never commit real API keys or env files.
 .env
+*.env
+.claude/
 data/
-.env
 eval/results/
 .pytest_cache/
+
+# Unrelated project that shares this working directory -- not part of TraceCDS.
+scanner/
