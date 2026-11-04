@@ -1,5 +1,23 @@
 # Caddy obtains and renews a free HTTPS certificate (Let's Encrypt) automatically.
+
+# Marketing homepage: static files, served directly.
 {$DOMAIN} {
+	encode gzip
+	root * /srv/site
+	file_server
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+	log {
+		output discard
+	}
+}
+
+# Chat app: the Gradio TraceCDS pipeline.
+{$CHAT_DOMAIN} {
 	encode gzip
 	reverse_proxy app:7860
 	header {

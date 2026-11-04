@@ -4,10 +4,10 @@ WORKDIR /app
 COPY requirements.txt pyproject.toml README.md LICENSE ./
 COPY src ./src
 COPY app.py ./
-RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir .
+COPY chat ./chat
+RUN pip install --no-cache-dir -r requirements.txt && pip install --no-cache-dir -e ".[dense]"
 
-ENV GRADIO_SERVER_NAME=0.0.0.0 \
-    GRADIO_ANALYTICS_ENABLED=False \
+ENV TRACECDS_HOST=0.0.0.0 \
     TRACECDS_CORPUS=/data/corpus.jsonl
 EXPOSE 7860
 CMD ["python", "app.py"]
