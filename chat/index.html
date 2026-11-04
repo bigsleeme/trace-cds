@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>TraceCDS</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app empty" id="app">
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ---------------------------------------------------------- sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 12.5l2.2 2.2L16 9" stroke="#e4703f" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      TraceCDS
+    </div>
+
+    <button class="new-btn" id="new-chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      New question
+    </button>
+
+    <nav class="nav">
+      <a id="home-link" href="#">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+        Home
+      </a>
+      <a href="https://github.com/bigsleeme/trace-cds" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/><path d="m15 6 6 6-6 6"/></svg>
+        Source &amp; method
+      </a>
+    </nav>
+
+    <div class="side-label">Answer style</div>
+    <div class="seg" id="answer-modes"></div>
+
+    <div class="side-label">Where to look</div>
+    <div class="seg" id="source-modes"></div>
+
+    <div class="side-label">FDA labels indexed</div>
+    <div class="drugs" id="drugs"></div>
+
+    <div class="sidefill"></div>
+    <div class="disclaimer">
+      <b>Research prototype. Not a medical device.</b>
+      Not for clinical use and not a substitute for professional judgment. Do not enter patient
+      names, dates of birth, or record numbers. Not for emergencies.
+    </div>
+  </aside>
+
+  <!-- ------------------------------------------------------------- main -->
+  <main class="main">
+    <header class="topbar">
+      <button class="icon-btn" id="toggle" aria-label="Toggle sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <span class="title">TraceCDS</span>
+      <span class="ver" id="ver"></span>
+    </header>
+
+    <div class="thread" id="thread">
+      <div class="greeting">
+        <h1>What would you like to look up?</h1>
+        <div class="chips" id="examples"></div>
+      </div>
+      <div class="thread-inner">
+        <div class="messages" id="messages"></div>
+      </div>
+    </div>
+
+    <div class="composer-area">
+      <form class="composer" id="composer">
+        <textarea id="input" rows="1" placeholder="Ask TraceCDS" autocomplete="off"></textarea>
+        <button class="send" id="send" type="submit" disabled aria-label="Send">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </form>
+      <div class="composer-hint" id="hint">Research prototype — not medical advice. Every statement is source-checked.</div>
+    </div>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TraceCDS — Traceable, source-checked answers to healthcare questions</title>
+<meta name="description" content="TraceCDS answers healthcare questions from FDA drug labeling and trust-checked web sources. Every statement is cited and verified against its source, in code, on every answer.">
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lora:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M8 12.5l2.2 2.2L16 9" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      TraceCDS
+    </a>
+    <div class="nav-links">
+      <a class="ghost" href="#how-it-works">How it works</a>
+      <a class="ghost" href="#open-source">Open source</a>
+      <a class="ghost" href="https://github.com/bigsleeme/trace-cds">GitHub</a>
+      <a class="btn primary" href="https://chat.tracecds.com">Use TraceCDS</a>
+    </div>
+  </div>
+</header>
+
+<div class="disclaimer">
+  <b>Research prototype. Not for clinical use. Not a medical device.</b>
+  TraceCDS does not provide medical advice and is not a substitute for professional judgment.
+</div>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Traceable, <span class="accent">source-checked</span><span class="cursor" aria-hidden="true"></span><br>answers to healthcare questions</h1>
+    <p class="sub">
+      TraceCDS answers from FDA drug labeling first, and a trust-checked web search when the
+      labels don't cover a question. Every statement cites its source, every number is verified
+      against that source, and directive language is removed — enforced in code, on every answer.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary" href="https://chat.tracecds.com">Use TraceCDS →</a>
+      <a class="btn secondary" href="https://github.com/bigsleeme/trace-cds">View source on GitHub</a>
+    </div>
+  </div>
+</section>
+
+<section id="how-it-works" class="alt">
+  <div class="wrap">
+    <h2 class="section-title">How it works</h2>
+    <p class="section-sub">
+      A hybrid retrieval and reranking pipeline grounds every open-source model response in a
+      cited passage, then verifies the response before it's shown.
+    </p>
+    <div class="flow">
+      <div class="flow-step">
+        <span class="num">01</span>
+        <h3>Screen the question</h3>
+        <p>Images, patient identifiers, and time-critical questions are declined before any retrieval.</p>
+      </div>
+      <div class="flow-step">
+        <span class="num">02</span>
+        <h3>Retrieve &amp; rerank</h3>
+        <p>BM25 + BAAI/bge-m3 dense retrieval, reranked by BAAI/bge-reranker-v2-m3.</p>
+      </div>
+      <div class="flow-step">
+        <span class="num">03</span>
+        <h3>Generate</h3>
+        <p>A written answer from NVIDIA Nemotron (via the DeepInfra API), or verbatim extractive quotes.</p>
+      </div>
+      <div class="flow-step">
+        <span class="num">04</span>
+        <h3>Verify &amp; report</h3>
+        <p>Every statement is checked against its source; failures are removed and logged.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="section-title">Built to stay within FDA's non-device CDS criteria</h2>
+    <p class="section-sub">
+      Prompting an LLM to follow FDA's non-device clinical decision support criteria isn't
+      reliable on its own — these checks run in code, on every statement, regardless of which
+      generator produced it.
+    </p>
+    <div class="grid">
+      <div class="feature">
+        <span class="icon">01</span>
+        <h3>Every statement cites its source</h3>
+        <p>Label section, DailyMed link, and label effective date — or a trust-checked web source.</p>
+      </div>
+      <div class="feature">
+        <span class="icon">02</span>
+        <h3>Numbers must appear in the source</h3>
+        <p>A dose, frequency, or threshold that isn't in the cited source is removed.</p>
+      </div>
+      <div class="feature">
+        <span class="icon">03</span>
+        <h3>Directive statements are removed</h3>
+        <p>"Give 500 mg" fails. "The label states the starting dose is 500 mg [S1]" passes.</p>
+      </div>
+      <div class="feature">
+        <span class="icon">04</span>
+        <h3>Sources are ranked by trust</h3>
+        <p>Approved healthcare sources are marked; anything else is clearly flagged, never hidden.</p>
+      </div>
+      <div class="feature">
+        <span class="icon">05</span>
+        <h3>Abstains when unsure</h3>
+        <p>When nothing can be verified against a source, TraceCDS says so instead of guessing.</p>
+      </div>
+      <div class="feature">
+        <span class="icon">06</span>
+        <h3>Label tables are preserved</h3>
+        <p>Dosing tables are converted to Markdown and quoted row by row with their column headers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <h2 class="section-title">See it in action</h2>
+    <p class="section-sub">Output from the synthetic test label in the project's test suite.</p>
+    <div class="example">
+      <p class="q"><b>Q:</b> How is exampledrug dosed for kidney function and eGFR?</p>
+      <ul>
+        <li>According to the exampledrug label (Dosage and Administration (table), Table 1. Dosing by
+          kidney function): "eGFR (mL/min): 45 or more, Recommendation: No adjustment; eGFR (mL/min):
+          30 to 44, Recommendation: Do not initiate" <span class="cite-tag">S1</span></li>
+        <li>According to the exampledrug label (Contraindications): "Exampledrug is contraindicated in
+          patients with severe renal impairment (eGFR below 30 mL/min)." <span class="cite-tag">S2</span></li>
+      </ul>
+      <div class="sources">
+        <div><b>S1</b> FDA label: exampledrug · Dosage and Administration (table) · effective 2025-01-15</div>
+        <div><b>S2</b> FDA label: exampledrug · Contraindications · effective 2025-01-15</div>
+      </div>
+      <div class="checks">
+        <div class="row"><span class="ok-mark">PASS</span> C1 No analysis of medical images or signals — text-only input.</div>
+        <div class="row"><span class="ok-mark">PASS</span> C2 Uses well-understood medical information — all sources are FDA labels.</div>
+        <div class="row"><span class="ok-mark">PASS</span> C3 Supports, does not direct, clinical judgment.</div>
+        <div class="row"><span class="ok-mark">PASS</span> C4 Basis is available for independent review.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="open-source">
+  <div class="wrap">
+    <h2 class="section-title">Open retrieval, verifiable answers</h2>
+    <p class="section-sub">Retrieval, source trust-checking, and the FDA non-device guardrails run in open-source
+      code. Answers are written by NVIDIA Nemotron, an open-weight model served through the DeepInfra API; your
+      question is sent there to generate the answer, and every statement it returns is still verified against the
+      cited sources before you see it.</p>
+    <div class="stack-list">
+      <div class="stack-item"><span>NVIDIA Nemotron (answers, via DeepInfra)</span><span class="license">open-weight API</span></div>
+      <div class="stack-item"><span>BAAI/bge-m3 (retrieval)</span><span class="license">MIT</span></div>
+      <div class="stack-item"><span>BAAI/bge-reranker-v2-m3</span><span class="license">Apache-2.0</span></div>
+      <div class="stack-item"><span>TraceCDS retrieval &amp; guardrails</span><span class="license">Apache-2.0</span></div>
+      <div class="stack-item"><span>SearXNG (web search)</span><span class="license">AGPL-3.0</span></div>
+      <div class="stack-item"><span>Gradio</span><span class="license">Apache-2.0</span></div>
+      <div class="stack-item"><span>Caddy</span><span class="license">Apache-2.0</span></div>
+      <div class="stack-item"><span>openFDA / DailyMed data</span><span class="license">U.S. gov't data</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt final-cta">
+  <div class="wrap">
+    <h2>Ask a question grounded in FDA labeling</h2>
+    <p>Free, self-hosted, and open source. Not a substitute for clinical judgment.</p>
+    <a class="btn primary" href="https://chat.tracecds.com">Use TraceCDS →</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div>© 2026 TraceCDS. Research prototype — not a medical device. Apache-2.0 licensed.</div>
+    <div class="links">
+      <a href="https://chat.tracecds.com">Chat</a>
+      <a href="https://github.com/bigsleeme/trace-cds">GitHub</a>
+      <a href="https://github.com/bigsleeme/trace-cds/blob/main/docs/fda_cds_mapping.md">FDA mapping</a>
+      <a href="https://github.com/bigsleeme/trace-cds/blob/main/CITATION.cff">Citation</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// Local testing: the chat app runs on its own port here instead of chat.tracecds.com.
+if (["localhost", "127.0.0.1"].includes(location.hostname)) {
+  document.querySelectorAll('a[href="https://chat.tracecds.com"]').forEach(function (a) {
+    a.href = "http://localhost:7860";
+  });
+}
+
+// Scroll-reveal: adds the hidden starting state only when JS actually runs,
+// so content is never invisible-by-default for no-JS clients or crawlers.
+(function () {
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!("IntersectionObserver" in window)) return;
+
+  function prep(el, index) {
+    el.classList.add("reveal");
+    el.style.transitionDelay = Math.min(index, 7) * 70 + "ms";
+  }
+
+  document.querySelectorAll(".flow, .grid, .stack-list").forEach(function (group) {
+    [].slice.call(group.children).forEach(prep);
+  });
+  [".hero h1", ".hero p.sub", ".hero .cta-row", ".final-cta h2", ".final-cta p", ".final-cta .btn"]
+    .forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (el) prep(el, 0);
+    });
+  // The worked example reveals like a live answer: question, then each
+  // statement, then sources, then the compliance checks.
+  document.querySelectorAll(".example .q, .example li, .example .sources, .example .checks .row")
+    .forEach(prep);
+
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("in");
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+
+  document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+})();
+</script>
+</body>
+</html>
