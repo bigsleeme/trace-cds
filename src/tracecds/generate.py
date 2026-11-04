@@ -100,13 +100,17 @@ class LLMGenerator:
 
     Talks to any OpenAI-compatible endpoint served by open-source software:
     Ollama (default, http://localhost:11434/v1), vLLM, or the llama.cpp server.
-    Default model: Qwen2.5-7B-Instruct (Apache 2.0). Fully open alternative:
-    OLMo 2 7B (Apache 2.0, open weights, data, and training code).
+    Default model: BioMistral-7B-DARE (Apache 2.0), a medically domain-adapted
+    Mistral merge, pulled straight from Hugging Face via Ollama's hf.co support.
+    A smaller domain model follows the strict output format (citations, no
+    directive language) less reliably than a larger general instruct model --
+    the ExtractiveGenerator fallback in pipeline.py exists precisely to cover
+    that gap, not as a sign something is broken.
     """
 
     name = "llm"
     DEFAULT_URL = "http://localhost:11434/v1"
-    DEFAULT_MODEL = "qwen2.5:7b-instruct"
+    DEFAULT_MODEL = "hf.co/mradermacher/BioMistral-Instructv0.2-7B-DARE-GGUF:Q4_K_M"
 
     def __init__(self, base_url: str | None = None, model: str | None = None, timeout: int = 180) -> None:
         self.base_url = (base_url or os.getenv("TRACECDS_LLM_URL") or self.DEFAULT_URL).rstrip("/")

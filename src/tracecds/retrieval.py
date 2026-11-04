@@ -1,8 +1,11 @@
 """Retrieval over label passages.
 
 The default retriever is BM25, implemented here with no dependencies so the
-whole pipeline runs offline and is easy to audit. An optional dense retriever
-(sentence-transformers) can be blended in for semantic matching.
+whole pipeline runs offline and is easy to audit. An optional, fully
+open-source hybrid pipeline (``pip install -e ".[dense]"``) blends BM25 with
+BAAI/bge-m3 dense embeddings and reranks the result with the BAAI/bge-reranker-v2-m3
+cross-encoder before generation -- use build_retriever() to get it when
+available and fall back to BM25 otherwise.
 """
 
 from __future__ import annotations
@@ -63,7 +66,7 @@ class BM25Retriever:
 class HybridRetriever(BM25Retriever):
     """BM25 blended with dense embeddings (requires sentence-transformers)."""
 
-    def __init__(self, passages: list[Passage], model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+    def __init__(self, passages: list[Passage], model_name: str = "BAAI/bge-m3",
                  alpha: float = 0.5) -> None:
         super().__init__(passages)
         from sentence_transformers import SentenceTransformer  # optional dependency
@@ -78,3 +81,46 @@ class HybridRetriever(BM25Retriever):
         qv = self.model.encode([query], normalize_embeddings=True)[0]
         dense = (self.emb @ qv).tolist()
         return [self.alpha * (s / top) + (1 - self.alpha) * max(d, 0.0) for s, d in zip(sparse, dense)]
+
+
+class Reranker:
+    """Cross-encoder reranker (requires sentence-transformers)."""
+
+    def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3") -> None:
+        from sentence_transformers import CrossEncoder  # optional dependency
+
+        self.model = CrossEncoder(model_name)
+
+    def rerank(self, query: str, passages: list[Passage], top_k: int) -> list[tuple[Passage, float]]:
+        pairs = [[query, p.text] for p in passages]
+        scores = self.model.predict(pairs)
+        ranked = sorted(zip(passages, scores), key=lambda x: x[1], reverse=True)
+        return ranked[:top_k]
+
+
+class HybridRerankRetriever(HybridRetriever):
+    """Hybrid BM25+dense retrieval, then cross-encoder reranking (frontier RAG pattern).
+
+    Stage 1 pulls a wider candidate pool with the fused BM25/dense score;
+    stage 2 reranks that pool with a cross-encoder for the final top k.
+    """
+
+    def __init__(self, passages: list[Passage], model_name: str = "BAAI/bge-m3", alpha: float = 0.5,
+                 reranker_model: str = "BAAI/bge-reranker-v2-m3", pool_size: int = 20) -> None:
+        super().__init__(passages, model_name=model_name, alpha=alpha)
+        self.reranker = Reranker(reranker_model)
+        self.pool_size = pool_size
+
+    def search(self, query: str, k: int = 5) -> list[tuple[Passage, float]]:
+        pool = super().search(query, k=self.pool_size)
+        if not pool:
+            return pool
+        return self.reranker.rerank(query, [p for p, _ in pool], top_k=k)
+
+
+def build_retriever(passages: list[Passage]) -> BM25Retriever:
+    """HybridRerankRetriever if the dense extras are installed, else plain BM25."""
+    try:
+        return HybridRerankRetriever(passages)
+    except ImportError:
+        return BM25Retriever(passages)
