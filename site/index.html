@@ -144,7 +144,7 @@
       <li class="step">
         <span class="step-n">02</span>
         <h3>Retrieve</h3>
-        <p>BM25 retrieval ranks passages from FDA drug labels. Any drug not pre-indexed is fetched live from openFDA on demand.</p>
+        <p>Hybrid retrieval ranks passages from FDA drug labels — lexical BM25 fused with dense semantic embeddings (bge-m3) and reranked by a cross-encoder. Any drug not pre-indexed is fetched live from openFDA on demand.</p>
       </li>
       <li class="step">
         <span class="step-n">03</span>
@@ -203,8 +203,7 @@
     <div class="stack">
       <div class="stack-row"><span>FDA label retrieval + guardrails</span><span class="lic">Apache-2.0</span></div>
       <div class="stack-row"><span>NVIDIA Nemotron — answers, via DeepInfra</span><span class="lic">open-weight · hosted API</span></div>
-      <div class="stack-row"><span>BM25 retrieval</span><span class="lic">dependency-free</span></div>
-      <div class="stack-row"><span>bge-m3 + bge-reranker-v2-m3 — optional hybrid retrieval</span><span class="lic">MIT · Apache-2.0</span></div>
+      <div class="stack-row"><span>Hybrid retrieval — BM25 + bge-m3 dense, cross-encoder reranked</span><span class="lic">MIT · Apache-2.0</span></div>
       <div class="stack-row"><span>SearXNG — web fallback</span><span class="lic">AGPL-3.0</span></div>
       <div class="stack-row"><span>openFDA / DailyMed data</span><span class="lic">U.S. gov’t data</span></div>
     </div>

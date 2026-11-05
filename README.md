@@ -101,11 +101,11 @@ tracecds eval
 tracecds eval --llm --baseline
 ```
 
-Retrieval, source trust-checking, and the guardrails run in open-source code. Web search runs through [SearXNG](https://github.com/searxng/searxng) (AGPL-3.0), a self-hosted metasearch engine that queries Google, Bing, DuckDuckGo, and PubMed from your own server. Retrieval is BM25 by default and, with `pip install -e ".[dense]"`, hybrid BM25 + [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) (MIT) dense retrieval reranked by [BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) (Apache-2.0) — use `retrieval.build_retriever()` to get the best available option automatically.
+Retrieval, source trust-checking, and the guardrails run in open-source code. Web search runs through [SearXNG](https://github.com/searxng/searxng) (AGPL-3.0), a self-hosted metasearch engine that queries Google, Bing, DuckDuckGo, and PubMed from your own server. Retrieval is hybrid: lexical BM25 fused with [BAAI/bge-m3](https://huggingface.co/BAAI/bge-m3) (MIT) dense semantic embeddings and reranked by a cross-encoder, [BAAI/bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) (Apache-2.0) — `retrieval.build_retriever()` wires this up automatically.
 
 The LLM generator talks to any OpenAI-compatible endpoint, set via `TRACECDS_LLM_URL`, `TRACECDS_MODEL`, and (for a hosted API) `TRACECDS_LLM_API_KEY`. The reference deployment uses NVIDIA Nemotron (an open-weight model) served through the [DeepInfra](https://deepinfra.com) API for fast answers — in that configuration your question is sent to DeepInfra to generate the answer, though every statement it returns is still verified against the cited sources first. Point the same variables at a self-hosted server (Ollama, vLLM, or the llama.cpp server) instead to keep generation on your own infrastructure; the "Quoted from label" mode uses no model at all and never leaves your server.
 
-An optional free openFDA API key (`OPENFDA_API_KEY`) raises rate limits. For semantic retrieval, install `pip install -e ".[dense]"` and use `HybridRetriever`.
+An optional free openFDA API key (`OPENFDA_API_KEY`) raises rate limits.
 
 ## Web app
 
@@ -157,7 +157,7 @@ To run the full stack (homepage, chat, API, HTTPS) with Docker, see [deploy/SELF
 ## How it works
 
 ```text
-question ──► input screen ──► retrieve (BM25 over label passages) ──► generate ──► verify each statement ──► answer + audit trail
+question ──► input screen ──► retrieve (hybrid BM25 + dense, reranked) ──► generate ──► verify each statement ──► answer + audit trail
              │ images/signals: decline                                │ extractive quotes, or LLM summary
              │ patient identifiers: decline                           │
              │ time-critical: decline                                 └─ failed statements removed and logged;
@@ -169,7 +169,7 @@ question ──► input screen ──► retrieve (BM25 over label passages) �
 | `sources.py` | Fetches labels from openFDA (a common set is pre-indexed; any other drug is looked up live on demand); splits them into section-tagged passages with DailyMed links |
 | `tables.py` | Converts label HTML tables to Markdown |
 | `chunking.py` | Sentence-aware chunking that never splits a sentence or a decimal |
-| `retrieval.py` | Dependency-free BM25; optional hybrid dense retrieval (BAAI/bge-m3) with cross-encoder reranking (BAAI/bge-reranker-v2-m3) |
+| `retrieval.py` | Hybrid retrieval: BM25 fused with dense semantic embeddings (BAAI/bge-m3), reranked by a cross-encoder (BAAI/bge-reranker-v2-m3) |
 | `web.py` | Web search through self-hosted SearXNG; page text extraction |
 | `trust.py` | Classifies each source as approved, recognized institution, or not approved |
 | `generate.py` | Extractive generator (no model) and LLM generator (open-weight model via a hosted or self-hosted OpenAI-compatible endpoint) |
