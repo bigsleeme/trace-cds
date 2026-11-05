@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TraceCDS API — Source-verified drug information for developers</title>
+<meta name="description" content="The TraceCDS API returns source-checked, FDA-label-cited answers to drug-information questions. Get a free API key and start in minutes.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='none' stroke='%23211b16' stroke-width='1.6'/%3E%3Cpath d='M8 12.5l2.2 2.2L16 9' fill='none' stroke='%23e4703f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,420&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<style>
+  .api-hero{padding:60px 0 44px}
+  .api-hero .eyebrow{margin-bottom:18px}
+  .api-hero h1{font-size:clamp(34px,4.6vw,52px);line-height:1.06;letter-spacing:-.02em;max-width:17ch}
+  .api-hero .lede{margin:20px 0 28px;max-width:56ch}
+  .doc{padding:60px 0}
+  .doc h2{font-size:clamp(24px,3vw,32px);letter-spacing:-.015em;margin-bottom:10px}
+  .doc h3{font-size:19px;margin:30px 0 10px}
+  .doc p{margin:10px 0;color:var(--ink-2)}
+  .doc ul{color:var(--ink-2);padding-left:20px;margin:12px 0}
+  .doc li{margin:6px 0}
+  .lead-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0 2px}
+  .method{font-family:var(--mono);font-size:12.5px;font-weight:600;color:#fff;background:var(--ok);
+    border-radius:6px;padding:3px 9px;letter-spacing:.03em}
+  .method.get{background:#3a6ea5}
+  .path{font-family:var(--mono);font-size:14.5px;color:var(--ink);font-weight:600}
+  pre{background:var(--ink-band);color:#eadfd4;border-radius:12px;padding:18px 20px;overflow-x:auto;
+    font-family:var(--mono);font-size:13px;line-height:1.6;margin:14px 0;border:1px solid #000}
+  pre .c{color:#9fb6c9}            /* comment / url */
+  pre .k{color:#e4a06f}            /* key */
+  pre .s{color:#9ccf9c}            /* string */
+  code.inline{font-family:var(--mono);font-size:.9em;background:var(--accent-soft);color:var(--accent);
+    border-radius:5px;padding:1px 6px}
+  .key-card{background:#fff;border:1px solid var(--line-2);border-left:4px solid var(--accent-fill);
+    border-radius:14px;padding:26px 28px;margin:22px 0}
+  .key-card h2{margin-top:0}
+  .key-card .btn{margin-top:8px}
+  table.params{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px}
+  table.params th,table.params td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  table.params th{color:var(--muted);font-weight:600;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase}
+  table.params td:first-child{font-family:var(--mono);color:var(--ink);font-weight:600;white-space:nowrap}
+  .ep{border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin:16px 0;background:#fff}
+  .doc .wrap{max-width:900px}
+  :root{--mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <strong>Research prototype — not for clinical use, not a medical device.</strong>
+  <span>Informational support for healthcare professionals; not a substitute for professional judgment.</span>
+</div>
+
+<header class="nav">
+  <div class="nav-inner wrap">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M8 12.5l2.2 2.2L16 9" stroke="var(--accent-fill)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>TraceCDS</span>
+    </a>
+    <nav class="nav-links">
+      <a href="/#how">How it works</a>
+      <a href="/#evidence">Evidence</a>
+      <a href="/#open">Open source</a>
+      <a href="api.html">API</a>
+      <a class="ghost-link" href="https://github.com/bigsleeme/trace-cds">GitHub</a>
+      <a class="btn primary" href="https://chat.tracecds.com">Open TraceCDS</a>
+    </nav>
+  </div>
+</header>
+
+<section class="api-hero">
+  <div class="wrap">
+    <span class="eyebrow">Developer API · v1</span>
+    <h1>Source-verified drug answers, over HTTP.</h1>
+    <p class="lede">
+      Send a drug-information question, get back cited statements — each one quoted from an FDA
+      drug label, linked to DailyMed, and verified against its source before it's returned. The
+      same FDA non-device CDS checks the app runs are reported in every response.
+    </p>
+    <div class="cta-row">
+      <a class="btn primary lg" href="#key">Get a free API key</a>
+      <a class="btn outline lg" href="https://api.tracecds.com/v1/docs">Interactive API docs</a>
+    </div>
+  </div>
+</section>
+
+<section class="doc band" id="key">
+  <div class="wrap">
+    <div class="key-card">
+      <h2>Get a free API key</h2>
+      <p>
+        Keys are issued free for research and evaluation. Email
+        <a href="mailto:admin@tracecds.com?subject=TraceCDS%20API%20key%20request">admin@tracecds.com</a>
+        with a sentence on what you're building, and we'll send you a key. There's no billing and no
+        card required.
+      </p>
+      <a class="btn primary" href="mailto:admin@tracecds.com?subject=TraceCDS%20API%20key%20request&body=Hi%2C%20I%27d%20like%20a%20free%20TraceCDS%20API%20key.%20I%27m%20building%3A%20">Request a key by email</a>
+    </div>
+  </div>
+</section>
+
+<section class="doc">
+  <div class="wrap">
+    <h2>Base URL &amp; authentication</h2>
+    <p>All endpoints live under <code class="inline">https://api.tracecds.com</code>. Authenticate every
+      request with the key you were issued, as a bearer token:</p>
+<pre><span class="c"># header on every request</span>
+Authorization: Bearer <span class="s">YOUR_API_KEY</span>
+
+<span class="c"># or, equivalently</span>
+X-API-Key: <span class="s">YOUR_API_KEY</span></pre>
+    <p>Requests and responses are JSON. <code class="inline">/v1/health</code> is the only endpoint that
+      needs no key.</p>
+
+    <h2 style="margin-top:46px">Ask a question</h2>
+    <div class="ep">
+      <div class="lead-row"><span class="method">POST</span><span class="path">/v1/ask</span></div>
+      <p>Answer a single drug-information question. Returns the verified statements, their cited sources
+        (with trust tier and label effective date), the four FDA non-device CDS criteria results, any
+        limitations, and any statements that were <em>removed</em> because they couldn't be verified.</p>
+<pre><span class="c"># request</span>
+curl -s https://api.tracecds.com/v1/ask \
+  -H <span class="s">"Authorization: Bearer YOUR_API_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"question": "What are the contraindications for metformin?"}'</span></pre>
+<pre><span class="c"># response (abridged)</span>
+{
+  <span class="k">"status"</span>: <span class="s">"answered"</span>,
+  <span class="k">"question"</span>: <span class="s">"What are the contraindications for metformin?"</span>,
+  <span class="k">"query_used"</span>: <span class="s">"What are the contraindications for metformin?"</span>,
+  <span class="k">"answer_mode"</span>: <span class="s">"Written answer"</span>,
+  <span class="k">"source_mode"</span>: <span class="s">"FDA labels, then web"</span>,
+  <span class="k">"statements"</span>: [
+    <span class="s">"According to the metformin label (Contraindications): severe renal</span>
+<span class="s">     impairment (eGFR below 30 mL/min/1.73 m2); hypersensitivity to</span>
+<span class="s">     metformin; acute or chronic metabolic acidosis. [S1]"</span>
+  ],
+  <span class="k">"citations"</span>: [
+    {
+      <span class="k">"label"</span>: <span class="s">"S1"</span>,
+      <span class="k">"drug"</span>: <span class="s">"metformin"</span>,
+      <span class="k">"section"</span>: <span class="s">"Contraindications"</span>,
+      <span class="k">"source_title"</span>: <span class="s">"FDA label: metformin"</span>,
+      <span class="k">"source_url"</span>: <span class="s">"https://dailymed.nlm.nih.gov/..."</span>,
+      <span class="k">"effective_date"</span>: <span class="s">"2026-09-09"</span>,
+      <span class="k">"trust"</span>: <span class="s">"approved"</span>,
+      <span class="k">"publisher"</span>: <span class="s">"FDA / DailyMed"</span>
+    }
+  ],
+  <span class="k">"criteria"</span>: [
+    {<span class="k">"criterion"</span>: 1, <span class="k">"passed"</span>: true, <span class="k">"detail"</span>: <span class="s">"Text-only input."</span>},
+    {<span class="k">"criterion"</span>: 2, <span class="k">"passed"</span>: true, <span class="k">"detail"</span>: <span class="s">"All sources are FDA drug labels."</span>},
+    {<span class="k">"criterion"</span>: 3, <span class="k">"passed"</span>: true, <span class="k">"detail"</span>: <span class="s">"Reports what sources say; directive statements removed."</span>},
+    {<span class="k">"criterion"</span>: 4, <span class="k">"passed"</span>: true, <span class="k">"detail"</span>: <span class="s">"Each statement cites a source with a link."</span>}
+  ],
+  <span class="k">"limitations"</span>: [<span class="s">"Label information may not reflect newer evidence or guidelines."</span>],
+  <span class="k">"warnings"</span>: [],
+  <span class="k">"removed_statements"</span>: []
+}</pre>
+      <h3>Request body</h3>
+      <table class="params">
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td>question</td><td>string</td><td><strong>Required.</strong> The drug-information question (≤ 500 characters).</td></tr>
+        <tr><td>answer_mode</td><td>string</td><td>Optional. <code class="inline">"Written answer"</code> (default, when the model is available) or <code class="inline">"Quoted from label"</code> for exact label quotes only.</td></tr>
+        <tr><td>source_mode</td><td>string</td><td>Optional. <code class="inline">"FDA labels, then web"</code> (default), <code class="inline">"FDA labels only"</code>, or <code class="inline">"Web only"</code>. Web-sourced answers are flagged as outside the FDA-label guarantee.</td></tr>
+        <tr><td>history</td><td>string[]</td><td>Optional. Prior questions (oldest first) so follow-ups resolve references.</td></tr>
+      </table>
+      <p><strong>status</strong> is one of <code class="inline">answered</code>, <code class="inline">abstained</code>
+        (nothing could be verified against a source), or <code class="inline">blocked</code> (e.g. an image/signal
+        input, or a time-critical emergency question, which TraceCDS declines by design).</p>
+    </div>
+
+    <h2 style="margin-top:46px">Check drug–drug interactions</h2>
+    <div class="ep">
+      <div class="lead-row"><span class="method">POST</span><span class="path">/v1/interactions</span></div>
+      <p>Report what two or more drugs' FDA labels say about interactions among them — passages in one
+        drug's label that name another are surfaced first. Each statement is cited and verified. It
+        reports what the labels say; it does not decide whether to co-prescribe.</p>
+<pre>curl -s https://api.tracecds.com/v1/interactions \
+  -H <span class="s">"Authorization: Bearer YOUR_API_KEY"</span> \
+  -H <span class="s">"Content-Type: application/json"</span> \
+  -d <span class="s">'{"drugs": ["warfarin", "amoxicillin"]}'</span></pre>
+      <p>The response has the same shape as <code class="inline">/v1/ask</code>.</p>
+    </div>
+
+    <h2 style="margin-top:46px">Service endpoints</h2>
+    <div class="ep">
+      <div class="lead-row"><span class="method get">GET</span><span class="path">/v1/health</span></div>
+      <p>Liveness check. No key required. Returns <code class="inline">{"status":"ok","version":"…"}</code>.</p>
+    </div>
+    <div class="ep">
+      <div class="lead-row"><span class="method get">GET</span><span class="path">/v1/info</span></div>
+      <p>Service capabilities: available answer modes, source modes, whether web search and the
+        written-answer model are enabled, and the list of indexed drugs. Key required.</p>
+    </div>
+
+    <h2 style="margin-top:46px">Interactive reference</h2>
+    <p>The full, always-current OpenAPI reference is served live at
+      <a href="https://api.tracecds.com/v1/docs">api.tracecds.com/v1/docs</a>
+      (and <a href="https://api.tracecds.com/v1/openapi.json">openapi.json</a> for code generation).</p>
+
+    <div class="cta-row" style="margin-top:36px">
+      <a class="btn primary" href="#key">Get a free API key</a>
+      <a class="btn outline" href="https://chat.tracecds.com">Try it in the chat first</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot-inner">
+    <div class="foot-brand">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M8 12.5l2.2 2.2L16 9" stroke="var(--accent-fill)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>© 2026 TraceCDS · Research prototype, not a medical device · Apache-2.0</span>
+    </div>
+    <div class="foot-links">
+      <a href="/">Home</a>
+      <a href="https://chat.tracecds.com">Chat</a>
+      <a href="https://github.com/bigsleeme/trace-cds">GitHub</a>
+      <a href="mailto:admin@tracecds.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
